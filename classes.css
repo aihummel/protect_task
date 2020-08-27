@@ -1,0 +1,31 @@
+.table_center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.prompt {
+    font-family: georgia;
+    font-size: 30px;
+    line-height: 1.5;
+}
+
+.responded {
+    border: 10px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.group {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.bg {
+    width: 800px;
+    height: 600px;
+    vertical-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

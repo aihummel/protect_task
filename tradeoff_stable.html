@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Protect Task: Threat Minimizing, Stable Stakes</title>
+        <script src='jspsych/jspsych.js'></script>
+        <script src='jspsych/plugins/jspsych-html-keyboard-response.js'></script>
+        <script src='jspsych/plugins/jspsych-html-button-response.js'></script>
+        <script src="jspsych/plugins/jspsych-call-function.js"></script>
+
+        <script src='threat_task_values.js'></script>
+        <script src='trial_components.js'></script>
+
+        <script src='other_blocks/consent_block.js'></script>
+        <script src='other_blocks/welcome_block.js'></script>
+        <script src='other_blocks/instructions_block.js'></script>
+
+        <script src='shock.js'></script>
+        <script src='tradeoff.js'></script>
+
+        <link href='jspsych/css/jspsych.css' rel='stylesheet' type='text/css'/>
+        <link href='classes.css' rel='stylesheet' type='text/css'/>
+    </head>
+    <body></body>
+    <script>
+
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        alert("Sorry, this experiment does not work on mobile devices");
+        document.innerHTML = "";
+    }
+
+    const mean = 0;
+    const std_dev = 2;
+
+    let min = 1;
+    let max = 9;
+
+    // Gaussian calculation from Kool et al.
+
+    function gaussRandom() {
+    	var u = 2*Math.random()-1;
+    	var v = 2*Math.random()-1;
+    	var r = u*u + v*v;
+    	/*if outside interval [0,1] start over*/
+    	if (r == 0 || r > 1) return gaussRandom();
+
+    	var c = Math.sqrt(-2*Math.log(r)/r);
+    	return u*c;
+    }
+
+    var gaussian = [];
+	for (i = 0; i < 1000; i++) {
+		gaussian[i] = mean + (gaussRandom() * std_dev);
+	}
+
+    var gaussianStep = function(n) {
+        let change =  Math.round(gaussian[Math.floor(Math.random() * gaussian.length)]);
+        let result = n + change;
+        result = Math.min(result, Math.max(max * 2 - result, min));
+        result = Math.max(result, Math.min(min * 2 - result, max));
+        return result;
+    }
+
+    //
+
+    var protection_a_list = [Math.floor(Math.random() * 5)];
+    var protection_b_list = [5 + Math.floor(Math.random() * 5)];
+    while (protection_a_list.length < n_trials) {
+        let index = protection_a_list.length - 1;
+        protection_a_list.push(gaussianStep(protection_a_list[index]));
+        protection_b_list.push(gaussianStep(protection_a_list[index]));
+    }
+    let my_index = 0;
+
+    let stakes = new Array(n_trials).fill([1, 2, 3, 4]).flat();
+    stakes = jsPsych.randomization.shuffle(stakes);
+
+    let choices = new Array(n_trials).fill([0, 1, 2, 3]).flat();
+    choices = jsPsych.randomization.shuffle(choices);
+
+    // order of confidence inputs
+    var confidence_type_list = new Array(n_trials).fill(['estimate', 'none', 'certainty', 'none']).flat();
+
+    var reset_bg = {
+		type: 'call-function',
+		func: function() {
+			document.body.style.backgroundColor = 'white';
+		}
+	}
+
+    // calculate jittered blocks
+    var size_options = [6, 7, 8, 9, 10, 10, 11, 12, 13, 14];
+    var block_sizes = jsPsych.randomization.sampleWithoutReplacement(size_options, 10);
+
+    var timeline = [
+        consent_block,
+        welcome_block,
+        instructions_block,
+        //practice_block,  // just trial but with different parameters
+        {
+            timeline: [
+                {
+                    type: 'tradeoff',
+                    stakes: function() {
+                        return stakes.shift();
+                    },
+                    choices_id: function() {
+                        return choices.shift();
+                    },
+                    protection_a: function() {
+                        return protection_a_list[my_index];
+                    },
+                    protection_b: function() {
+                        return protection_b_list[my_index];
+                    },
+                    confidence_type: function() {
+                        return confidence_type_list[my_index++];
+                    },
+                    trial_no: function() {
+                        return my_index;
+                    },
+                }
+            ],
+            repetitions: n_trials,
+        },
+        reset_bg,
+        //end_survey_block,  // not sure what to do for these
+        //debrief_block
+    ];
+
+    jsPsych.init({
+        timeline: timeline,
+        show_progress_bar: true,
+        auto_update_progress_bar: false,
+        on_finish: function() {
+            jsPsych.data.displayData();
+        }
+    });
+
+    </script>
+</html>
